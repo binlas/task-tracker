@@ -22,6 +22,14 @@ pipeline {
             }
         }
 
+        stage('Free Port') {
+            steps {
+                bat '''
+                for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5001') do taskkill /F /PID %%a
+                '''
+            }
+        }
+
         stage('Run Container') {
             steps {
                 bat 'docker run -d -p 5001:5000 -p 8501:8501 --name task-tracker task-tracker-app'
