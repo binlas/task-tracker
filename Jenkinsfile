@@ -17,8 +17,8 @@ pipeline {
 
         stage('Stop Old Container') {
             steps {
-                bat 'docker stop task-tracker || true'
-                bat 'docker rm task-tracker || true'
+                bat 'docker stop task-tracker || exit 0'
+                bat 'docker rm task-tracker || exit 0'
             }
         }
 
