@@ -4,44 +4,59 @@ import streamlit as st
 API_URL = "http://localhost:5000"
 PRIORITIES = ["High", "Medium", "Low"]
 
-st.set_page_config(page_title="Task Tracker", page_icon="✅", layout="wide")
-
+st.set_page_config(page_title="Task Tracker", page_icon="✅", layout="centered")
 st.markdown(
     """
     <style>
     .stApp {
-        background: linear-gradient(120deg, #f8fbff 0%, #eef3fb 100%);
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     }
-    .hero {
-        background: linear-gradient(120deg, #4f46e5, #0891b2);
-        color: #fff;
-        padding: 1.2rem 1.4rem;
+    .block-container {
+        padding-top: 1.25rem;
+        padding-bottom: 2rem;
+    }
+    .app-hero {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 14px;
-        margin-bottom: 1rem;
-        box-shadow: 0 8px 24px rgba(9, 31, 67, 0.18);
+        padding: 1rem 1rem 0.9rem;
+        margin-bottom: 0.9rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    .metric-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.4rem 0.6rem;
     }
     .task-card {
         background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 0.85rem 0.9rem;
-        margin-bottom: 0.7rem;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #6366f1;
+        border-radius: 10px;
+        padding: 0.7rem 0.8rem;
+        margin-bottom: 0.4rem;
     }
-    .pill {
+    .task-meta {
+        color: #475569;
+        font-size: 0.86rem;
+    }
+    .priority-pill {
         display: inline-block;
-        padding: 0.15rem 0.5rem;
+        padding: 0.08rem 0.45rem;
         border-radius: 999px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 600;
     }
-    .pill-high { background: #fee2e2; color: #991b1b; }
-    .pill-medium { background: #fef3c7; color: #92400e; }
-    .pill-low { background: #dcfce7; color: #166534; }
+    .p-high { background: #fee2e2; color: #991b1b; }
+    .p-medium { background: #fef3c7; color: #92400e; }
+    .p-low { background: #dcfce7; color: #166534; }
     </style>
     """,
     unsafe_allow_html=True,
 )
+st.title("✅ Task Tracker")
+st.caption("Simple and clear task management")
 
 
 def safe_get_tasks():
@@ -49,141 +64,135 @@ def safe_get_tasks():
         response = requests.get(f"{API_URL}/tasks", timeout=5)
         if response.status_code == 200:
             return response.json(), None
-        return [], "Unable to fetch tasks from API."
+        return [], "Could not fetch tasks from API."
     except requests.exceptions.RequestException:
-        return [], "Backend is unreachable. Start Flask API at http://localhost:5000."
+        return [], "Backend is not reachable. Start API at http://localhost:5000."
 
 
-def priority_class(priority):
-    normalized = (priority or "Medium").strip().lower()
-    if normalized == "high":
-        return "pill pill-high"
-    if normalized == "low":
-        return "pill pill-low"
-    return "pill pill-medium"
+def create_task(title, category, priority):
+    payload = {
+        "title": title,
+        "category": category or "General",
+        "priority": priority,
+    }
+    return requests.post(f"{API_URL}/add-task", json=payload, timeout=5)
 
 
-st.markdown(
-    """
-    <div class="hero">
-      <h2 style="margin:0;">Task Tracker Pro</h2>
-      <p style="margin:0.3rem 0 0;">Organize smarter with priorities, filters, quick actions, and progress insights.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+def priority_badge(priority):
+    level = (priority or "Medium").strip().lower()
+    if level == "high":
+        return '<span class="priority-pill p-high">High</span>'
+    if level == "low":
+        return '<span class="priority-pill p-low">Low</span>'
+    return '<span class="priority-pill p-medium">Medium</span>'
+
 
 tasks, error = safe_get_tasks()
 if error:
     st.error(error)
 
-total_tasks = len(tasks)
-completed_tasks = len([task for task in tasks if task.get("completed")])
-pending_tasks = total_tasks - completed_tasks
-completion_rate = (completed_tasks / total_tasks * 100) if total_tasks else 0.0
+total = len(tasks)
+completed = len([task for task in tasks if task.get("completed")])
+pending = total - completed
 
-mc1, mc2, mc3, mc4 = st.columns(4)
-mc1.metric("Total", total_tasks)
-mc2.metric("Completed", completed_tasks)
-mc3.metric("Pending", pending_tasks)
-mc4.metric("Progress", f"{completion_rate:.0f}%")
-st.progress(completion_rate / 100)
+st.markdown('<div class="app-hero">', unsafe_allow_html=True)
+st.markdown("### Your Daily Tasks")
+st.caption("Track work clearly, finish faster.")
+st.markdown("</div>", unsafe_allow_html=True)
 
-tab_manage, tab_board = st.tabs(["Manage Tasks", "Task Board"])
+c1, c2, c3 = st.columns(3)
+with c1:
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    st.metric("Total", total)
+    st.markdown("</div>", unsafe_allow_html=True)
+with c2:
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    st.metric("Pending", pending)
+    st.markdown("</div>", unsafe_allow_html=True)
+with c3:
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    st.metric("Completed", completed)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-with tab_manage:
-    st.subheader("Create Task")
-    with st.form("create_task_form", clear_on_submit=True):
-        title = st.text_input("Task title")
-        category = st.text_input("Category", placeholder="General")
-        priority = st.selectbox("Priority", PRIORITIES, index=1)
-        submitted = st.form_submit_button("Add Task")
+st.divider()
+st.subheader("Add New Task")
+with st.form("add_task_form", clear_on_submit=True):
+    task_title = st.text_input("Task title", placeholder="Example: Submit assignment")
+    col_a, col_b = st.columns(2)
+    task_category = col_a.text_input("Category", placeholder="General")
+    task_priority = col_b.selectbox("Priority", PRIORITIES, index=1)
+    add_clicked = st.form_submit_button("Add Task")
 
-        if submitted:
-            payload = {
-                "title": title,
-                "category": category or "General",
-                "priority": priority,
-            }
+    if add_clicked:
+        if not task_title.strip():
+            st.warning("Please enter a task title.")
+        else:
             try:
-                response = requests.post(f"{API_URL}/add-task", json=payload, timeout=5)
+                response = create_task(task_title.strip(), task_category.strip(), task_priority)
                 if response.status_code == 200:
                     st.success("Task added.")
                     st.rerun()
                 else:
-                    st.error("Failed to add task. Please check input.")
+                    st.error("Failed to add task.")
             except requests.exceptions.RequestException:
-                st.error("Could not reach backend API.")
+                st.error("Could not connect to backend.")
 
-    st.subheader("Quick Actions")
-    if not tasks:
-        st.info("No tasks available yet.")
-    else:
-        action_col1, action_col2, action_col3 = st.columns([1, 1, 2])
-        selected_task_id = action_col1.selectbox(
-            "Task ID",
-            [task["id"] for task in tasks],
-            key="quick_task_select",
+st.divider()
+st.subheader("Task List")
+
+left, right = st.columns([2, 1])
+search_text = left.text_input("Search", placeholder="Type part of task title")
+status_filter = right.selectbox("Show", ["All", "Pending", "Completed"])
+
+filtered_tasks = tasks
+if search_text.strip():
+    needle = search_text.strip().lower()
+    filtered_tasks = [task for task in filtered_tasks if needle in task.get("title", "").lower()]
+
+if status_filter != "All":
+    expected = status_filter == "Completed"
+    filtered_tasks = [task for task in filtered_tasks if task.get("completed") == expected]
+
+if not filtered_tasks:
+    st.info("No tasks found.")
+else:
+    for task in filtered_tasks:
+        row1, row2, row3 = st.columns([5, 2, 2])
+
+        status_text = "Completed" if task.get("completed") else "Pending"
+        row1.markdown(
+            f"""
+            <div class="task-card">
+                <div><strong>#{task['id']} {task.get('title', '')}</strong></div>
+                <div class="task-meta">
+                    Category: {task.get('category', 'General')} |
+                    Priority: {priority_badge(task.get('priority', 'Medium'))} |
+                    Status: {status_text}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-        action_type = action_col2.selectbox("Action", ["Toggle Done", "Delete"])
 
-        if action_col3.button("Apply Action", use_container_width=True):
+        toggle_label = "Undo" if task.get("completed") else "Complete"
+        if row2.button(toggle_label, key=f"toggle_{task['id']}", use_container_width=True):
             try:
-                if action_type == "Delete":
-                    response = requests.delete(f"{API_URL}/delete-task/{selected_task_id}", timeout=5)
-                else:
-                    response = requests.put(f"{API_URL}/toggle-task/{selected_task_id}", timeout=5)
+                response = requests.put(f"{API_URL}/toggle-task/{task['id']}", timeout=5)
                 if response.status_code == 200:
-                    st.success("Action completed.")
                     st.rerun()
                 else:
-                    st.error("Action failed. Task may not exist.")
+                    st.error("Unable to update task.")
             except requests.exceptions.RequestException:
-                st.error("Could not reach backend API.")
+                st.error("Could not connect to backend.")
 
-with tab_board:
-    st.subheader("Task Board")
-    left, right = st.columns([2, 1])
+        if row3.button("Delete", key=f"delete_{task['id']}", use_container_width=True):
+            try:
+                response = requests.delete(f"{API_URL}/delete-task/{task['id']}", timeout=5)
+                if response.status_code == 200:
+                    st.rerun()
+                else:
+                    st.error("Unable to delete task.")
+            except requests.exceptions.RequestException:
+                st.error("Could not connect to backend.")
 
-    search = left.text_input("Search tasks", placeholder="Type keyword...")
-    status_filter = right.selectbox("Status", ["All", "Pending", "Completed"])
-
-    sort_by = st.selectbox("Sort by", ["Newest", "Priority (High to Low)", "A-Z"])
-
-    filtered = tasks
-    if search:
-        filtered = [task for task in filtered if search.lower() in task.get("title", "").lower()]
-    if status_filter != "All":
-        expected = status_filter == "Completed"
-        filtered = [task for task in filtered if task.get("completed") == expected]
-
-    if sort_by == "Priority (High to Low)":
-        order = {"High": 0, "Medium": 1, "Low": 2}
-        filtered = sorted(filtered, key=lambda t: order.get(t.get("priority", "Medium"), 1))
-    elif sort_by == "A-Z":
-        filtered = sorted(filtered, key=lambda t: t.get("title", "").lower())
-    else:
-        filtered = sorted(filtered, key=lambda t: t.get("id", 0), reverse=True)
-
-    if not filtered:
-        st.info("No tasks match your filters.")
-    else:
-        for task in filtered:
-            done_badge = "✅ Done" if task.get("completed") else "🕒 Pending"
-            p_class = priority_class(task.get("priority"))
-            st.markdown(
-                f"""
-                <div class="task-card">
-                    <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;">
-                        <div>
-                            <div style="font-weight:600;">#{task["id"]} - {task.get("title", "Untitled")}</div>
-                            <div style="font-size:0.86rem;color:#475569;">
-                                Category: {task.get("category", "General")} | {done_badge}
-                            </div>
-                        </div>
-                        <div class="{p_class}">{task.get("priority", "Medium")}</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        st.divider()
