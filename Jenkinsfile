@@ -25,7 +25,8 @@ pipeline {
         stage('Free Port') {
             steps {
                 bat '''
-                for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5001') do taskkill /F /PID %%a
+                for /F "tokens=5" %%a in ('netstat -aon ^| findstr :5001') do taskkill /F /PID %%a
+                exit 0
                 '''
             }
         }
