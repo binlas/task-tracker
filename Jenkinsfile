@@ -5,9 +5,9 @@ pipeline {
 
         stage('Clone Code') {
             steps {
-                git 'https://github.com/binlas/task-tracker.git'
-            }
-        }
+                git branch: 'main', url: 'https://github.com/binlas/task-tracker.git'
+                 }
+}
 
         stage('Build Docker Image') {
             steps {
