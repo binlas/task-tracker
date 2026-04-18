@@ -24,7 +24,7 @@ pipeline {
 
         stage('Run Container') {
             steps {
-                bat 'docker run -d -p 5000:5000 -p 8501:8501 --name task-tracker task-tracker-app'
+                bat 'docker run -d -p 5001:5000 -p 8501:8501 --name task-tracker task-tracker-app'
             }
         }
         stage('Check Docker') {
