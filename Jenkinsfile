@@ -27,5 +27,10 @@ pipeline {
                 bat 'docker run -d -p 5000:5000 -p 8501:8501 --name task-tracker task-tracker-app'
             }
         }
+        stage('Check Docker') {
+            steps {
+                bat 'docker --version'
+            }
+        }
     }
 }
